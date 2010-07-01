@@ -222,7 +222,7 @@ class UserManager
   	$clientFailCount = 0;
   	if($clientFailCount > $failcount)
   	  sleep(pow(2,$clientFailCount));
-  	return login($username, $password);
+  	return $this->login($username, $password);
   }
   
   /*
