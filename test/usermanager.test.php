@@ -49,6 +49,8 @@ if(!$_user->hasPerm($level)){
 
 $_user->changePassword($pass,$pass.$pass);
 
+$_user->logout();
+
 $_user->deleteUser($login_id);
 
 $_user->require_login();
