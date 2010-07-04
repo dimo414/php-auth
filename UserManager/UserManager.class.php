@@ -12,7 +12,7 @@ VERSION: 1.0.2
 /*
 UserManager class is a self contained way of tracking and controlling users, fully functional, no database required.
 */
-class UserManager
+abstract class UserManager
 {
   /*
   To add custom user attributes extend $userFields with an array of 
@@ -26,7 +26,6 @@ class UserManager
   var $permissionFail = 'You are logged in, but do not have adequate permissions to view this page.';
   var $levels = array('GUEST' => UserManager::GUEST, 'USER' => UserManager::USER, 'SUPERUSER' => UserManager::SUPERUSER, 'ADMIN' => UserManager::ADMIN);
   var $user = array(); // populated in constructor
-  var $loadedUser = false;
   const GUEST = 0;
   const USER = 2;
   const SUPERUSER = 4;
@@ -35,7 +34,7 @@ class UserManager
   /*
   Abstract class that unifies how XMLUserManager and MySQLUserManager behave
   */
-  function UserManager($file)
+  function __construct()
   {
     if(!isset($_SESSION['usermanager__level']))
     {
@@ -45,9 +44,9 @@ class UserManager
     }
       
 		$this->user = array(
-			'id' = $_SESSION['usermanager__id'],
-			'level' = $_SESSION['usermanager__level'],
-			'username' = $_SESSION['usermanager__username']
+			'id' => $_SESSION['usermanager__id'],
+			'level' => $_SESSION['usermanager__level'],
+			'username' => $_SESSION['usermanager__username']
 		);
   }
   
@@ -90,14 +89,11 @@ class UserManager
   in session information.  This is anything other than
   username, level, and id.  The values will be populated
   in $this->user field.
+  
+  Implementing designs should ensure that calling this 
+  more than once doesn't waste requests
   */
-	function loadCurUser(){
-		if($this->loadedUser){
-			return;
-		}
-		$this->loadedUser = true;
-		// NOT IMPLEMENTED AT THIS LEVEL
-	}
+	abstract public function loadCurUser();
   
   /*
   $num: numerical user level
@@ -117,20 +113,14 @@ class UserManager
   $id: User id
   returns associative array of user's attributes.
   */
-  function getUser($id)
-  {
-    // NOT IMPLEMENTED AT THIS LEVEL
-  }
+  abstract public function getUser($id);
   
   /*
   $attribute: attribute to lookup from the user fields array (or username, password, or level)
   $value: value of the attribute to look for
   searches for users who have their $attribute set to $value and returns an array of all matches.
   */
-  function lookupAttribute($attribute, $value, $justID=false)
-  {
-    // NOT IMPLEMENTED AT THIS LEVEL
-  }
+  abstract public function lookupAttribute($attribute, $value, $justID=false);
   
   //////////////////
   // Processing Functions
@@ -228,9 +218,9 @@ class UserManager
     $_SESSION['usermanager__id'] = 0;
     
     $this->user = array(
-			'id' = $_SESSION['usermanager__id'],
-			'level' = $_SESSION['usermanager__level'],
-			'username' = $_SESSION['usermanager__username']
+			'id' => $_SESSION['usermanager__id'],
+			'level' => $_SESSION['usermanager__level'],
+			'username' => $_SESSION['usermanager__username']
 		);
   }
   
@@ -336,10 +326,7 @@ class UserManager
   Suggest extending this function in order to
   serialize and format for storage custom parameters
   */
-  function addUser($username, $password, $level, $array, $autocommit = true)
-  {
-    // NOT IMPLEMENTED AT THIS LEVEL
-  }
+  abstract public function addUser($username, $password, $level, $array, $autocommit = true);
   
   /*
   $origPass: original password of current user
@@ -348,9 +335,7 @@ class UserManager
   Attempts to change the password of the current user.  If they authenticate ($origPass matches the stored password)
   then their password will be changed, and the method will return true.  Else it will return false.
   */
-  function changePassword($origPass, $newPass, $autocommit = true){
-  	// NOT IMPLEMENTED AT THIS LEVEL
-  }
+  abstract public function changePassword($origPass, $newPass, $autocommit = true);
   
   /*
   $id: id of user to modify
@@ -369,10 +354,7 @@ class UserManager
   Suggest extending this function in order to
   serialize and format for storage custom parameters
   */
-  function modifyUser($id, $username, $password, $level, $array, $autocommit = true)
-  {
-    // NOT IMPLEMENTED AT THIS LEVEL
-  }
+  abstract public function modifyUser($id, $username, $password, $level, $array, $autocommit = true);
   
   /*
   $id: id of user to delete
@@ -381,35 +363,39 @@ class UserManager
   if you want to delete more than one user at once.  If $autocommit
   is false, you must call commitChanges() to update the underlying data.
   */
-  function deleteUser($id, $autocommit = true)
-  {
-    // NOT IMPLEMENTED AT THIS LEVEL
-  }
+  abstract public function deleteUser($id, $autocommit = true);
   
   /*
   Commits changes made with autocommit set to false
   */
-  function commitChanges()
-  {
-    // NOT IMPLEMENTED AT THIS LEVEL
-  }
+  abstract public function commitChanges();
   
   //////////////////
-  // Private Functions
+  // Internal Functions
   //////////////////
   
-  /* Private function for manageUsers() to get all users */
-  function getAllUsers(){
-  	// NOT IMPLEMENTED AT THIS LEVEL
-  }
+  /* Internal function for manageUsers() to get all users */
+  abstract protected function getAllUsers();
   
-  /* Private function for manageUsers() to handle updating the user data */
-  function updateUsers(){
-    // NOT IMPLEMENTED AT THIS LEVEL
-  }
+  /* Internal function for manageUsers() to handle updating the user data */
+  abstract protected function updateUsers();
   
-  function hash($string,$salt=''){
+  public function hash($text,$salt=''){
+	  $saltlength = 20;
   	
+  	if($salt == ''){
+	    $chars = '';
+	    $characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';    
+	    for ($p = 0; $p < $saltlength; $p++) {
+	        $chars .= $characters[mt_rand(0, strlen($characters)-1)];
+	    }
+	    $salt = $chars;
+	  } else {
+	  	$pair = explode(':',$salt);
+	  	$salt = $pair[0];
+	  }
+	  
+	  return $salt.':'.sha1($salt.$text);
   }
 }
 
