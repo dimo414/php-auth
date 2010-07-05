@@ -6,7 +6,6 @@ class XMLUserManager extends UserManager
 {
   var $file;
   var $simple;
-  var $dom;
   
   /*
   $file: path to xml file
