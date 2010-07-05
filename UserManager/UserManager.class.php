@@ -137,11 +137,18 @@ abstract class UserManager
   {
     $users = $this->lookupAttribute('username',$username);
     $user = $users[0];
-    if($username == $user['username'] && $user->password == $this->hash($password, $user['password']))
+    if($username == $user['username'] && $user['password'] == $this->hash($password, $user['password']))
     {
+      $_SESSION['usermanager__id'] = $user['id'];
       $_SESSION['usermanager__level'] = $user['level'];
       $_SESSION['usermanager__username'] = $user['username'];
-      $_SESSION['usermanager__id'] = $user['id'];
+      
+      $this->user = array(
+				'id' => $_SESSION['usermanager__id'],
+				'level' => $_SESSION['usermanager__level'],
+				'username' => $_SESSION['usermanager__username']
+			);
+		
       return true;
     }
     return false;
@@ -262,16 +269,15 @@ abstract class UserManager
     echo '</tr>';
 
   foreach ($this->getAllUsers() as $user) {
-    $this->unserializeUser($user); // This shouldn't need to actually return anything, since the object it being modified.
     echo '<tr valign="top">
     <td><input type="checkbox" name="user['.htmlentities($user['id']).'][delete]" value="true" /></td>
-    <td><input type="text" name="user['.htmlentities($user['id']).'][username]" value="'.htmlentities($user->username).'" /></td>
+    <td><input type="text" name="user['.htmlentities($user['id']).'][username]" value="'.htmlentities($user['username']).'" /></td>
     <td><input type="password" name="user['.htmlentities($user['id']).'][password]" /></td>
     <td><select name="user['.htmlentities($user['id']).'][level]">';
     foreach($this->levels as $name => $value)
     {
       if($value > self::GUEST)
-        echo '<option value="'.$value.'" '.(((int)$user->level == $value) ? 'selected="selected" ' : '').'>'.$name.'</option>';
+        echo '<option value="'.$value.'" '.(((int)$user['level'] == $value) ? 'selected="selected" ' : '').'>'.$name.'</option>';
     }
     echo '</select></td>';
     foreach($this->userFields as $field)
@@ -322,11 +328,8 @@ abstract class UserManager
   is false, you must call commitChanges() to update the underlying data.
   
   returns false if username already exists, else returns true.
-  
-  Suggest extending this function in order to
-  serialize and format for storage custom parameters
   */
-  abstract public function addUser($username, $password, $level, $array, $autocommit = true);
+  abstract public function addUser($username, $password, $level = UserManager::USER, $array = array(), $autocommit = true);
   
   /*
   $origPass: original password of current user
@@ -338,23 +341,15 @@ abstract class UserManager
   abstract public function changePassword($origPass, $newPass, $autocommit = true);
   
   /*
-  $id: id of user to modify
-  $username: new username
-  $password: new password
-  $level: new permission level
-  $array: array of new user values
+  $user: an associateive array of values to set - id attribute is required
   $autocommit: updates file when function executes
-  Modifies the values of a existing user, with the username and password set,
-  with permission level $level (should be passed one of the
-  class constants), $array is an associative array of all the
-  values in the $userFields array.  Set $autocommit to false
-  if you want to modify more than one user at once.  If $autocommit
-  is false, you must call commitChanges() to update the underlying data.
-  
-  Suggest extending this function in order to
-  serialize and format for storage custom parameters
+  Modifies the values of a existing user, taking an associative array
+  describing the user attributes to change.  'id' is a required index
+  Set $autocommit to false if you want to modify more than one user
+  at once.  If $autocommit is false, you must call commitChanges()
+  to update the underlying data.
   */
-  abstract public function modifyUser($id, $username, $password, $level, $array, $autocommit = true);
+  abstract public function modifyUser($user, $autocommit = true);
   
   /*
   $id: id of user to delete
@@ -375,10 +370,10 @@ abstract class UserManager
   //////////////////
   
   /* Internal function for manageUsers() to get all users */
-  abstract protected function getAllUsers();
+  abstract public function getAllUsers();
   
   /* Internal function for manageUsers() to handle updating the user data */
-  abstract protected function updateUsers();
+  abstract public function updateUsers();
   
   public function hash($text,$salt=''){
 	  $saltlength = 20;
@@ -396,6 +391,12 @@ abstract class UserManager
 	  }
 	  
 	  return $salt.':'.sha1($salt.$text);
+  }
+  
+  protected function error($message){
+  	$back = debug_backtrace();
+		$caller = $back[count($back)-1];
+		trigger_error($message.' in  <strong>'.$caller['file'].'</strong> on line <strong>'.$caller['line'].'</strong>'."\n<br />Triggered",E_USER_ERROR);
   }
 }
 
