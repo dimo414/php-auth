@@ -35,18 +35,6 @@ class XMLUserManager extends UserManager
     $this->simple = simplexml_load_file($file);
   }
   
-  public function loadCurUser(){
-  	// if not logged in
-  	if($this->user['level'] == UserManager::GUEST){
-  		return;
-  	}
-  	// since password is not stored in sessions, its existance
-  	// indicates the full user has already been loaded
-  	if(!isset($this->user['password'])){
-  		$this->user = $this->getUser($this->user['id']);
-  	}
-  }
-  
   public function getUser($id){
   	$users = $this->simple->xpath('user[@id='.htmlentities($id).']');
   	if(count($users) == 0)
