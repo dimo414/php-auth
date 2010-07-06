@@ -96,13 +96,14 @@ abstract class UserManager
   public function loadCurUser(){
   	// if not logged in
   	if($this->user['level'] == UserManager::GUEST){
-  		return;
+  		return false;
   	}
   	// since password is not stored in sessions, its existance
   	// indicates the full user has already been loaded
   	if(!isset($this->user['password'])){
   		$this->user = $this->getUser($this->user['id']);
   	}
+  	return true;
   }
   
   /*

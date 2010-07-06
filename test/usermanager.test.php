@@ -1,9 +1,19 @@
 <?php
 
+require_once('../../mysql.class.php');
 require_once('../UserManager/XMLUserManager.class.php');
+require_once('../UserManager/MySQLUserManager.class.php');
 
 session_start();
-$_user = new XMLUserManager('BasicUserManager.xml');
+
+if(isset($_GET['type']) && $_GET['type'] == 'xml')
+	$_user = new XMLUserManager('BasicUserManager.xml');
+else{
+	$db = new my_mysqli('localhost','digigem','digigem','users');
+	$_user = new MySQLUserManager($db,'users');
+	// TEST CREATETABLESTRING
+	// $_user->createTable();
+}
 
 // TEST HASH
 /*
@@ -20,31 +30,32 @@ if($hash == $rehash){
 }
 */
 
+// TEST LOOKUPATTRIBUTE
+/*
+$attr = 'username';
+$valu = 'test';
+$users = $_user->lookupAttribute($attr,$valu,false);
+echo nl2br(print_r($users,true));
+
+$users = $_user->lookupAttribute($attr,$valu,true);
+echo nl2br(print_r($users,true));
+*/
+
+// TEST GETUSER
+/*
+$user = $_user->getUser(12);
+echo nl2br(print_r($user,true));
+*/
+
 // TEST LOADUSER
 /*
+//$_user->addUser('test','test');
 $_user->login('test','test');
 echo nl2br(print_r($_user->user,true));
 $_user->loadCurUser();
 echo nl2br(print_r($_user->user,true));
 $_user->logout();
 echo nl2br(print_r($_user->user,true));
-*/
-
-// TEST GETUSER
-/*
-$user = $_user->getUser(1);
-echo nl2br(print_r($user,true));
-*/
-
-// TEST LOOKUPATTRIBUTE
-/*
-$attr = 'username';
-$valu = 'user';
-$users = $_user->lookupAttribute($attr,$valu,false);
-echo nl2br(print_r($users,true));
-
-$users = $_user->lookupAttribute($attr,$valu,true);
-echo nl2br(print_r($users,true));
 */
 
 // TEST ADDUSER
@@ -69,22 +80,22 @@ echo $_user->user['username'].'<br />';
 
 // TEST MODIFYUSER
 /*
-$user = $_user->getUser(5);
+$user = $_user->getUser(15);
 echo nl2br(print_r($user,true));
-$_user->modifyUser(array('id' => 5, 'username' => 'tested'));
-$user = $_user->getUser(5);
+$_user->modifyUser(array('id' => 15, 'username' => 'tested'));
+$user = $_user->getUser(15);
 echo nl2br(print_r($user,true));
-$_user->modifyUser(array('id' => 5, 'username' => 'test', 'password' => 'test'));
-$user = $_user->getUser(5);
+$_user->modifyUser(array('id' => 15, 'username' => 'test', 'password' => 'test'));
+$user = $_user->getUser(15);
 echo nl2br(print_r($user,true));
 */
 
 // TEST DELETEUSER
 /*
 $_user->addUser('name','pass');
-$user = $_user->lookupAttribute('username','name');
-echo 'trying to remove '.$user[0]['id'];
-$_user->deleteUser($user[0]['id']);
+$user = $_user->lookupAttribute('username','name',true);
+echo 'trying to remove '.$user[0];
+$_user->deleteUser($user[0]);
 */
 
 // TEST GETALLUSERS
@@ -94,9 +105,9 @@ echo nl2br(print_r($users,true));
 */
 
 // TEST MANAGEUSERS
-///*
+/*
 $_user->manageUsers(true);
-//*/
+*/
 
 
 

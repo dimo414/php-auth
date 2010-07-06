@@ -1,1 +1,2 @@
-ManageUsers stops after deleting a user | owner:Michael, open:False, id:fc9d21274f71ae785dff488a31a7a790b36668fc, time:1278297507.04
+all autocommit MySQL methods commit even if autocommit is false except addUser | owner:Michael, open:True, id:2b14e5138954802c7e02b601b0247d9ababc3fc2, time:1278404597.35
+ManageUsers stops after deleting a user                                        | owner:Michael, open:False, id:fc9d21274f71ae785dff488a31a7a790b36668fc, time:1278297507.04
