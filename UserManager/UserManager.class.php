@@ -93,7 +93,17 @@ abstract class UserManager
   Implementing designs should ensure that calling this 
   more than once doesn't waste requests
   */
-	abstract public function loadCurUser();
+  public function loadCurUser(){
+  	// if not logged in
+  	if($this->user['level'] == UserManager::GUEST){
+  		return;
+  	}
+  	// since password is not stored in sessions, its existance
+  	// indicates the full user has already been loaded
+  	if(!isset($this->user['password'])){
+  		$this->user = $this->getUser($this->user['id']);
+  	}
+  }
   
   /*
   $num: numerical user level
@@ -136,6 +146,8 @@ abstract class UserManager
   function login($username, $password)
   {
     $users = $this->lookupAttribute('username',$username);
+    if(count($users) == 0)
+    	return false;
     $user = $users[0];
     if($username == $user['username'] && $user['password'] == $this->hash($password, $user['password']))
     {
