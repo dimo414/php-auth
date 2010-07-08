@@ -96,7 +96,7 @@ class XMLUserManager extends UserManager
     return true;
   }
   
-  public function changePassword($origPass, $newPass, $autocommit = true){
+  public function changePassword($origPass, $newPass){
   	if($this->user['level'] == UserManager::GUEST)
   		return false; // cannot change password without being logged in
 
@@ -109,8 +109,7 @@ class XMLUserManager extends UserManager
     {
       $user->password = $this->hash($newPass);
       
-      if($autocommit)
-      	$this->commitChanges();
+      $this->commitChanges();
       return true;
     }
     return false;
@@ -173,56 +172,6 @@ class XMLUserManager extends UserManager
 	    $ret[] = $array;
 	  }
 	  return $ret;
-  }
-  
-  public function updateUsers(){
-  	if($_SERVER['REQUEST_METHOD'] == "POST")
-    {
-      $maxId = (int)$this->simple->nextid;
-      $toDel = array();
-     // Update entries
-      foreach ($this->simple->user as $user)
-      {
-      	$id = (string)$user['id'];
-        if (isset($_POST['user'][$id]))
-        {
-          $pUser = $_POST['user'][$id];
-          if(isset($pUser['delete']) && $pUser['delete'] == 'true') {
-          	$toDel[] = $user['id'];
-          }
-          else
-          {
-            $array = array('id' => $id, 'username' => $pUser['username'], 'level' => $pUser['level']);
-            if(!empty($pUser['password']))
-              $array['password'] = $pUser['password'];
-            foreach($this->userFields as $field)
-            {
-              $array[$field] = isset($pUser[$field]) ? $pUser[$field] : '';
-            }
-            $this->modifyUser($array, false);
-          }
-        }
-      }
-      // this is necessary, because deleting while looping over users breaks out of the loop
-      foreach($toDel as $id){
-      	$this->deleteUser($id);
-      }
-      // New Entries
-      foreach ($_POST['newuser'] as $pUser)
-      {
-        if(isset($pUser['username']) && trim($pUser['username']) != '' &&
-           isset($pUser['password']) && trim($pUser['password']) != '')
-        {
-          $array = array();
-          foreach($this->userFields as $field)
-          {
-            $array[$field] = isset($pUser[$field]) ? $pUser[$field] : '';
-          }
-          $this->addUser($pUser['username'], $pUser['password'], $pUser['level'], $array, false);
-        }
-      }
-      $this->commitChanges();
-    }
   }
   
   public function commitChanges(){
