@@ -351,7 +351,7 @@ abstract class UserManager
   Attempts to change the password of the current user.  If they authenticate ($origPass matches the stored password)
   then their password will be changed, and the method will return true.  Else it will return false.
   */
-  abstract public function changePassword($origPass, $newPass, $autocommit = true);
+  abstract public function changePassword($origPass, $newPass);
   
   /*
   $user: an associateive array of values to set - id attribute is required
@@ -386,7 +386,54 @@ abstract class UserManager
   abstract public function getAllUsers();
   
   /* Internal function for manageUsers() to handle updating the user data */
-  abstract public function updateUsers();
+  public function updateUsers(){
+  	if($_SERVER['REQUEST_METHOD'] == "POST")
+    {
+      $toDel = array();
+     // Update entries
+      foreach ($this->getAllUsers() as $user)
+      {
+      	$id = (string)$user['id'];
+        if (isset($_POST['user'][$id]))
+        {
+          $pUser = $_POST['user'][$id];
+          if(isset($pUser['delete']) && $pUser['delete'] == 'true') {
+          	$toDel[] = $user['id'];
+          }
+          else
+          {
+            $array = array('id' => $id, 'username' => $pUser['username'], 'level' => $pUser['level']);
+            if(!empty($pUser['password']))
+              $array['password'] = $pUser['password'];
+            foreach($this->userFields as $field)
+            {
+              $array[$field] = isset($pUser[$field]) ? $pUser[$field] : '';
+            }
+            $this->modifyUser($array, false);
+          }
+        }
+      }
+      // this is necessary, because deleting while looping over users breaks out of the loop
+      foreach($toDel as $id){
+      	$this->deleteUser($id);
+      }
+      // New Entries
+      foreach ($_POST['newuser'] as $pUser)
+      {
+        if(isset($pUser['username']) && trim($pUser['username']) != '' &&
+           isset($pUser['password']) && trim($pUser['password']) != '')
+        {
+          $array = array();
+          foreach($this->userFields as $field)
+          {
+            $array[$field] = isset($pUser[$field]) ? $pUser[$field] : '';
+          }
+          $this->addUser($pUser['username'], $pUser['password'], $pUser['level'], $array, false);
+        }
+      }
+      $this->commitChanges();
+    }
+  }
   
   public function hash($text,$salt=''){
 	  $saltlength = 20;
