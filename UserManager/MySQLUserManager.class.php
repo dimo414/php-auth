@@ -59,27 +59,7 @@ foreach($this->userFields as $field)
   	return $ret;
   }
   
-  public function addUser($username, $password, $level = UserManager::USER, $array = array(), $autocommit = true){
-  	$result = $this->db->query('SELECT * FROM `'.$this->table.'` WHERE `username` = \''.$this->db->real_escape_string($username).'\';');
-  	if($result->num_rows > 0)
-  		return false;
-  		
-    $newuser = array();
-    $newuser['username'] = $username;
-    $newuser['password'] = $this->hash($password);
-    $newuser['level'] = $level;
-    foreach($this->userFields as $field)
-    {
-      $newuser[$field] = (isset($array[$field]) ? $array[$field] : '');
-    }
-    $this->add[] = $newuser;
-    
-    if($autocommit)
-      $this->commitChanges();
-    return true;
-  }
-  
-  public function changePassword($origPass, $newPass, $autocommit = true){
+  public function changePassword($origPass, $newPass){
   	if($this->user['level'] == UserManager::GUEST)
   		return false; // cannot change password without being logged in
   		
@@ -91,8 +71,22 @@ foreach($this->userFields as $field)
   	if($this->db->affected_rows == 0)
   		return false;
   		
+    return true;
+  }
+  
+  public function addUser($username, $password, $level = UserManager::USER, $array = array(), $autocommit = true){
+    $newuser = array();
+    $newuser['username'] = $username;
+    $newuser['password'] = $this->hash($password);
+    $newuser['level'] = $level;
+    foreach($this->userFields as $field)
+    {
+      $newuser[$field] = (isset($array[$field]) ? $array[$field] : '');
+    }
+    $this->add[] = $newuser;
+    
     if($autocommit)
-    	$this->commitChanges();
+      return $this->commitChanges();
     return true;
   }
   
@@ -129,11 +123,7 @@ foreach($this->userFields as $field)
   }
   
   public function deleteUser($id, $autocommit = true){
-  	$query = 'DELETE FROM `'.$this->table.'` WHERE `id` = %s LIMIT 1;';
-  	$this->db->query(sprintf($query,$this->db->real_escape_string($id)));
-  	
-  	if($this->db->affected_rows == 0)
-  		return false;
+  	$this->delete[] = $id;
     
     if($autocommit)
       $this->commitChanges();
@@ -164,6 +154,22 @@ foreach($this->userFields as $field)
 	  	
 	  	$this->db->query($add_query);
 	  }
+	  if(count($this->modify) > 0){
+	  	
+	  }
+	  if(count($this->delete) > 0){
+	  	// DELETE FROM `users` WHERE `id` = 25 OR `id` = 35;
+	  	$query = 'DELETE FROM `'.$this->table.'` WHERE %s;';
+	  	$ids = '';
+	  	foreach($this->delete as $del){
+	  		$ids = sprintf('`id` = %s OR ',(int)$del);
+	  	}
+	  	
+	  	$this->db->query(sprintf($query,substr($ids,0,-4)));
+	  	
+	  	if($this->db->affected_rows == 0)
+	  		return false;
+	  }
   }
   
   public function getAllUsers(){
@@ -175,10 +181,6 @@ foreach($this->userFields as $field)
   		$res[] = $row;
   	}
   	return $res;
-  }
-  
-  public function updateUsers(){
-  	
   }
 }
 
