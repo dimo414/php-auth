@@ -28,7 +28,7 @@ class XMLUserManager extends UserManager
 );
   	}
 		if(!$success || is_dir($file)){
-			$this->error('Failed to access/create XML database file \''.$file.'\'');
+			$this->usage_error('Failed to access/create XML database file \''.$file.'\'');
 			return;
 		}
 		
@@ -117,8 +117,8 @@ class XMLUserManager extends UserManager
   
   public function modifyUser($arr, $autocommit = true){
     if(!isset($arr['id'])){
-    	$this->error('Must include \'id\' attribute when modifying user');
-    	return;
+    	$this->usage_error('Must include \'id\' attribute when modifying user');
+    	return false;
     }
     $users = $this->simple->xpath('user[@id='.htmlentities($arr['id']).']');
   	if(count($users) == 0)
@@ -126,6 +126,10 @@ class XMLUserManager extends UserManager
     $user = $users[0];
     
     if(isset($arr['username'])){
+    	$usernameMatches = $this->lookupAttribute('username', $arr['username'],true);
+    	$count = count($usernameMatches);
+	    if($count > 1 || ($count == 1 && $usernameMatches[0] != $arr['id']))
+	    	return false;
     	$user->username = $arr['username'];
     }
     if(isset($arr['password'])){
