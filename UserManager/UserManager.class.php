@@ -23,9 +23,10 @@ abstract class UserManager
   */
   var $userFields = array();
   var $loginFail = 'Incorrect username or password.';
-  var $permissionFail = 'You are logged in, but do not have adequate permissions to view this page.';
+  var $permissionFail = 'You are logged in as %s, but do not have adequate permissions to view this page.';
   var $levels = array('GUEST' => UserManager::GUEST, 'USER' => UserManager::USER, 'SUPERUSER' => UserManager::SUPERUSER, 'ADMIN' => UserManager::ADMIN);
   var $user = array(); // populated in constructor
+  private $manage_errors = array();
   const GUEST = 0;
   const USER = 2;
   const SUPERUSER = 4;
@@ -204,7 +205,7 @@ abstract class UserManager
     $this->header('Login Required');
     
     echo '  <div class="usermanager_auth">'.
-    (($error) ? '    <div class="usermanager_notice">'.$notice.'</div>' : '')
+    (($error) ? '    <div class="usermanager_notice">'.sprintf($notice,$this->user['username']).'</div>' : '')
     .'    <form action="'.$_SERVER['PHP_SELF'].'" method="post">
       <table>
         <tr>
@@ -264,10 +265,12 @@ abstract class UserManager
     if(!$override)
       $this->require_login(self::ADMIN);
    
-   $this->updateUsers();
+    $this->updateUsers();
    
-   $this->header('Manage Users');
+    $this->header('Manage Users');
     
+    $this->print_errors();
+       
     echo '<form action="'.$_SERVER['PHP_SELF'].'" method="post">
       <table border="1" cellspacing="0" cellpadding="3">
         <tr>
@@ -453,11 +456,21 @@ abstract class UserManager
 	  return $salt.':'.sha1($salt.$text);
   }
   
-  protected function error($message){
+  protected final function usage_error($message){
   	$back = debug_backtrace();
 		$caller = $back[count($back)-1];
 		trigger_error($message.' in  <strong>'.$caller['file'].'</strong> on line <strong>'.$caller['line'].'</strong>'."\n<br />Triggered",E_USER_ERROR);
   }
+  
+  protected function manage_error($message){
+		$this->manage_errors[] = '<div class="userMngrError">'.$message.'</div>';
+  }
+  
+  protected function print_errors(){
+    foreach($this->manage_errors as $error){
+	    echo $error;
+	  }
+	}
 }
 
 ?>
