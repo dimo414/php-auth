@@ -456,6 +456,10 @@ abstract class UserManager
 	  return $salt.':'.sha1($salt.$text);
   }
   
+  public function validUsername($username){
+  	return preg_match('/^[a-zA-Z0-9\_-]+$/',$username);
+  }
+  
   protected final function usage_error($message){
   	$back = debug_backtrace();
 		$caller = $back[count($back)-1];
