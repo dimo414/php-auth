@@ -17,7 +17,7 @@ else{
 
 if(!isset($_GET['test']))
 {
-	$tests = array('hash','lookup','getuser','loaduser','adduser','changepass','modifyuser','deleteuser','getall','manageusers','login','logout');
+	$tests = array('hash','validate','lookup','getuser','loaduser','adduser','changepass','modifyuser','deleteuser','getall','manageusers','login','logout');
   $_user->header('Select A Test');
   echo '<h2>Select A Test</h2>
   <ul>';
@@ -43,6 +43,15 @@ if($_GET['test'] == 'hash'){
 	'.$rehash.'<br />';
 		exit;
 	}
+}
+
+// TEST VALIDUSER
+if($_GET['test'] == 'validate'){
+	if(!isset($_GET['user'])){
+		echo 'Specify a user GET parameter.';
+		exit;
+	}
+	echo $_user->validUsername($_GET['user']) ? 'VALID' : 'INVALID';
 }
 
 // TEST LOOKUPATTRIBUTE

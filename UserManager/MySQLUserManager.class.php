@@ -75,6 +75,8 @@ foreach($this->userFields as $field)
   }
   
   public function addUser($username, $password, $level = UserManager::USER, $array = array(), $autocommit = true){
+    if(!$this->validUsername($username))
+    	return false;
     $newuser = array();
     $newuser['username'] = $username;
     $newuser['password'] = $this->hash($password);
@@ -97,6 +99,10 @@ foreach($this->userFields as $field)
     }
     if(isset($arr['password'])){
     	$arr['password'] = $this->hash($arr['password']);
+    }
+    if(isset($arr['username'])){
+	    if(!$this->validUsername($arr['username']))
+	    	return false;
     }
     // this removes any non-valid entries from the array and structures the data
     // in a way easily converted into an SQL query

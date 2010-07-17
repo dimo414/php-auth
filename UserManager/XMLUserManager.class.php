@@ -78,6 +78,8 @@ class XMLUserManager extends UserManager
   	$usernameMatches = $this->lookupAttribute('username', $username,true);
     if(count($usernameMatches) > 0)
     	return false;
+    if(!$this->validUsername($username))
+    	return false;
     $nextId = (int)$this->simple->nextid[0];
     $this->simple->nextid[0] = $nextId + 1;
     
@@ -129,6 +131,8 @@ class XMLUserManager extends UserManager
     	$usernameMatches = $this->lookupAttribute('username', $arr['username'],true);
     	$count = count($usernameMatches);
 	    if($count > 1 || ($count == 1 && $usernameMatches[0] != $arr['id']))
+	    	return false;
+	    if(!$this->validUsername($arr['username']))
 	    	return false;
     	$user->username = $arr['username'];
     }
