@@ -1,5 +1,14 @@
 <?php
 
+/*
+This application was written by Michael Diamond and DigitalGemstones.com ©2008
+It is released for any and all not-for-profit use.
+If you wish to use this script to directly or indirectly make a profit, you must first contact and receive permission from Michael Diamond.
+http://www.DigitalGemstones.com/contact.php
+
+VERSION: 1.5.0
+*/
+
 require_once('UserManager.class.php');
 
 class XMLUserManager extends UserManager

@@ -1,4 +1,7 @@
-NEED A LICENSE HERE
+This application was written by Michael Diamond and DigitalGemstones.com ©2008
+It is released for any and all not-for-profit use.
+If you wish to use this script to directly or indirectly make a profit, you must first contact and receive permission from Michael Diamond.
+http://www.DigitalGemstones.com/contact.php
 
 --------------------------------------------------------------------------------
 
@@ -10,9 +13,11 @@ CONTENTS
 5. Known Bugs
 6. Default Usage
    1. Initialization
+   		1. Database Setup
    2. Creating Users
    3. Login and Checking Permission
-   4. Additional Methods Worth Noting
+   4. Current User Information
+   5. Additional Methods Worth Noting
       1. logout
       2. getCurUserID
       3. getCurUserName
@@ -33,21 +38,24 @@ CONTENTS
 --------------------------------------------------------------------------------
 
 ABOUT
-Version 1.0.2 - check http://www.DigitalGemstones.com/script/auth/UserManager.php for up to date versions.
+Version 1.5.0 - check http://www.DigitalGemstones.com/script/auth/UserManager.php for up to date versions.
 The UserManager class is a totally self contained user management system.  Include the class in your website, and you have with a few short lines of code a fully operational login system, including multiple user levels (default User, SuperUser, and Admin) and the ability to lock web pages from users without appropriate permissions - similar to .htaccess and .htpassword locking, except integrated with your website rather than a series of intrusive 401 login prompts.
+
+There are two versions, XMLUserManager and MySQLUserManager, both of which extend UserManager.  XMLUserManager is the primary tool, providing user managment without a database or any complicated configuration.  MySQLUserManager is a new tool which lets you maintain larger user bases, and is ideal if you are already using a database, but don't have user managment.  Both classes follow the same interface, and therefore switching from one to the other is as easy as changing which class you initialize.
 
 --------------------------------------------------------------------------------
 
 REQUIREMENTS
-Should be functional with a default install of PHP5, no database required.
-Has been tested on an install of Uniform Server http://www.uniformserver.com/
+Should be functional with a default install of PHP5, no database required (for XMLUserManager, MySQL is obviously required for MySQLUserManager).
+Tested on an install of Uniform Server http://www.uniformserver.com/
 
 --------------------------------------------------------------------------------
 
 FEATURES
-* XML Backend, no database or setup required.
+* XML Backend: no database or setup required.
+* MySQL Backend: easy to setup, scales well.
 * Customizable user permission levels.
-* Customizable storage fields
+* Customizable storage fields.
 * Integrates seamlessly with your website.
 * One function call locks a page to anyone without the proper permission.
 * Self contained user management page.
@@ -58,19 +66,9 @@ FEATURES
 FUTURE FEATURES
 * Optionally lock login with too many failed attempts.
 * Log system to track when users log in, from where, and which pages they visit.
-* Create an updateXML function to resolve Known Bug #1.
-* Change how header() is called to differentiate between login pages and manage user pages.
-* Compartmentalize serialization into one, independent function.
-* Create a getUserByAttribute() function for more efficient search.
 
 If you should extend the class to include any of these features, or add any other useful tools, please let me know
 http://www.DigitalGemstones.com/contact.php
-
---------------------------------------------------------------------------------
-
-KNOWN BUGS
-* If the $userFields array is modified after records have been added to the XML file, you will not be able to add those new attributes to the user.
-  The logical solution to me is to create a updateXML function which will bring all entries in the file up to speed.  Until then, simply do not change the user attributes once users have been created.
   
 --------------------------------------------------------------------------------
 
@@ -78,15 +76,27 @@ DEFAULT USAGE
 This section describes how to use the class right out of the box.  As is, UserManager has four user levels, Guest, User, Superuser, and Admin, and stores each user's username, password (encrypted), and level.  If you don't want to read through this, all public functions in the UserManager class are fully documented, and if after reading any of this you're not sure quite how something works, it's very likely the comments in the class will explain everything.
 
 INITIALIZATION
-  UserManager uses PHP Sessions to store the current visitor's information.  So before anything else, call session_start().  Then create an instance of the UserManager class by passing the constructor the location of the XML file.  You should either move the users.xml file to a safer location, either outside the web root, or with .htaccess permissions..  Even though passwords are encrypted, it is still highly irresponsible and dangerous to leave the xml file world-readable.
+  UserManager uses PHP Sessions to store the current visitor's information.  So before anything else, call session_start().  Then create an instance of either the XMLUserManager class by passing the constructor the location of the XML file, or the MySQLUserManager class by passing a mysqli database connection, and the name of a table the class should work with.  If using the XMLUserManager, be sure to specify a location outside the web root or hidden from public view.  Even though passwords are encrypted, it is still highly irresponsible and dangerous to leave the xml file world-readable.
   
   ----------
+  include 'XMLUserManager.class.php';
   session_start();
-  include 'usermanager.class.php';
-  $_user = new UserManager('users.xml');
+  $user = new XMLUserManager('users.xml');
+  ----OR----
+  include 'MySQLUserManager.class.php';
+  session_start();
+  $db = new mysqli(HOST,USER,PASS,DB);
+  $user = new MySQLUserManager($db);
   ----------
   
-  That's all it takes to initialize the UserManager.  To make everything much easier, your best plan would be to place these three lines of code in your common include file.  For the remainder of the readme, it will be assumed that calling "include 'common.inc.php';" will call the three lines of code listed above.
+  That's all it takes to initialize the UserManager.  To make everything much easier, your best plan would be to place these three lines of code in your common include file.  For the remainder of the readme, it will be assumed that calling "include 'common.inc.php';" will call the lines of code listed above.
+  
+DATABASE SETUP
+Using MySQLUserManager requires slightly more setup than XMLUserManager, but it is still quite easy.  The first time you construct the UserManager, you will need to construct the appropriate table.  MySQLUserManager provides the necessary SQL, which it can provide to you, or execute itself if it has enough permission.
+
+If the user on the connection passed to MySQLUserManager has CREATE permission, you can call 'createTable()', this will execute the create command and construct the necessary table.  Alternatively, you can call 'echo createTableString()' to get the command to execute it manually.
+
+MySQLUserManager cannot predict what data you may want to search by.  Looking up by username and id are fast with the default command, but if you extend the class (more below) be aware that lookupAttribute() is only efficent when run against properly indexed data.  Therefore you should modify the CREATE instruction as necessary - a decent rule of thumb would be to index any colum you intend to search by, but MySQLUserManager does not eliminate the need for good database design.
   
 CREATING USERS
   There are two different ways to create and manage your website's users.  The first is through the built in manageUsers() function and the second is manually, with addUser(), modifyUser(), and deleteUser().
@@ -123,21 +133,16 @@ LOGIN AND CHECKING PERMISSION
   }
   ----------
   
+CURRENT USER INFORMATION
+  The current user's ID, username, and level are stored in the session and are immediatly availible to every webpage.  This information is stored in the $user array.  If you need additional information about the current user, you must call loadCurUser().  This will populate the array with all other information on the current user.
+  
 ADDITIONAL METHODS WORTH NOTING
   logout
     Call logout() and the current user will be logged out and reduced to GUEST permission level.
-  getCurUserID
-    Returns the current user's id - works off a session variable, so no file-read overhead.
-  getCurUserName
-    Returns the current user's username - works off a session variable, so no file-read overhead.
-  getCurUserLevel
-    Returns the current user's permission level (as an int) - works off a session variable, so no file-read overhead.
-  getUser
-    returns an array of the attributes of the user who's id is passed.  Note that this function searches the XML file and should not be used for redundant or unnecessary calls.
   userLevel
     Returns the string version of a permission level, pass it the result of getCurUserLevel(), for instance.
   modifyUser
-    Just like add user, but takes an additional parameter (first) of the user ID to modify.  Note that this function allows for the username to be changed.  If you do not want to allow this functionality, deny such action in your own code, before calling modifyUser().
+    This method takes an associative array of parameters to new values.  You can even change the username.  You must specify the user id (obviously) but all other parameters are optional.  What you don't specify 
   deleteUser
     Takes a user id to delete from the XML file.
 
