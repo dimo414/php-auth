@@ -1,16 +1,25 @@
 <?php
 
 /*
-This application was written by Michael Diamond and DigitalGemstones.com ©2008
-It is released for any and all not-for-profit use.
-If you wish to use this script to directly or indirectly make a profit, you must first contact and receive permission from Michael Diamond.
-http://www.DigitalGemstones.com/contact.php
+This tool was developed by Michael Diamond (http://www.DigitalGemstones.com)
+and is released freely for personal and corporate use under the licence which can be found at:
+http://digitalgemstones.com/licence.php
+and can be summarized as:
+You are free to use this software for any purpose as long as Digital Gemstones is credited,
+and may redistribute the software in its original form or modified as you see fit, 
+as long as any credit comments in the code remain unchanged.
 
 VERSION: 1.5.0
 */
 
 /*
-UserManager class is a self contained way of tracking and controlling users, fully functional, no database required.
+UserManager class is an abstract PHP user managment implementation, designed to very easily be added
+into a website.  As of this writing there are two implementations, XMLUserManager, and MySQLUserManager.
+
+XMLUserManager is ideal to very quickly create a user system on a website.  It requires no database,
+and no configuration.
+MySQLUserManager is simiarly very quick to set up, but is slightly more complicated, and of course
+requires a database.  For websites expecting larger numbers of users however, it is likely to be more robust.
 */
 abstract class UserManager
 {
@@ -90,9 +99,6 @@ abstract class UserManager
   in session information.  This is anything other than
   username, level, and id.  The values will be populated
   in $this->user field.
-  
-  Implementing designs should ensure that calling this 
-  more than once doesn't waste requests
   */
   public function loadCurUser(){
   	// if not logged in
@@ -343,7 +349,7 @@ abstract class UserManager
   if you want to add more than one user at once.  If $autocommit
   is false, you must call commitChanges() to update the underlying data.
   
-  returns false if username already exists, else returns true.
+  returns false if username already exists or it appears the operation failed, else returns true.
   */
   abstract public function addUser($username, $password, $level = UserManager::USER, $array = array(), $autocommit = true);
   
@@ -364,6 +370,8 @@ abstract class UserManager
   Set $autocommit to false if you want to modify more than one user
   at once.  If $autocommit is false, you must call commitChanges()
   to update the underlying data.
+  
+  returns false if it appears the operation failed, else returns true.
   */
   abstract public function modifyUser($user, $autocommit = true);
   
@@ -373,20 +381,25 @@ abstract class UserManager
   deletes user with id passed.  Set $autocommit to false
   if you want to delete more than one user at once.  If $autocommit
   is false, you must call commitChanges() to update the underlying data.
+  
+  returns false if it appears the operation failed, else returns true.
   */
   abstract public function deleteUser($id, $autocommit = true);
   
   /*
-  Commits changes made with autocommit set to false
+  Commits changes made which have not yet been committed because $autocommit was set to false in the previous call(s)
   */
   abstract public function commitChanges();
+  
+  /*
+  Runction for manageUsers() to get all users
+  Availible for public access if such a list is desired
+  */
+  abstract public function getAllUsers();
   
   //////////////////
   // Internal Functions
   //////////////////
-  
-  /* Internal function for manageUsers() to get all users */
-  abstract public function getAllUsers();
   
   /* Internal function for manageUsers() to handle updating the user data */
   public function updateUsers(){
@@ -438,6 +451,12 @@ abstract class UserManager
     }
   }
   
+  /*
+  The password hashing function to be used.  Can be extended if you feel it is not satisfactory.
+  
+  Designed off of crypt(), but with major improvements including potentially
+  stronger salts and hashes and no silent failures on small text lengths.
+  */
   public function hash($text,$salt=''){
 	  $saltlength = 20;
   	
@@ -456,20 +475,33 @@ abstract class UserManager
 	  return $salt.':'.sha1($salt.$text);
   }
   
+  /*
+  The function deciding what a valid username is.
+  Could require usernames be email addresses by extending this function, for instance.
+  */
   public function validUsername($username){
   	return preg_match('/^[a-zA-Z0-9\_-]+$/',$username);
   }
   
+  /*
+  Triggers a PHP error.  This is only used when the class is being used incorrectly, not when an error occours.
+  */
   protected final function usage_error($message){
   	$back = debug_backtrace();
 		$caller = $back[count($back)-1];
 		trigger_error($message.' in  <strong>'.$caller['file'].'</strong> on line <strong>'.$caller['line'].'</strong>'."\n<br />Triggered",E_USER_ERROR);
   }
   
+  /*
+  Logs an error from manageUsers for display.
+  */
   protected function manage_error($message){
 		$this->manage_errors[] = '<div class="userMngrError">'.$message.'</div>';
   }
   
+  /*
+  Displays the errors generated from andy calls to manage_error()
+  */
   protected function print_errors(){
     foreach($this->manage_errors as $error){
 	    echo $error;

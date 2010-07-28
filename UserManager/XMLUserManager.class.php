@@ -1,14 +1,18 @@
 <?php
 
 /*
-This application was written by Michael Diamond and DigitalGemstones.com ©2008
-It is released for any and all not-for-profit use.
-If you wish to use this script to directly or indirectly make a profit, you must first contact and receive permission from Michael Diamond.
-http://www.DigitalGemstones.com/contact.php
+This tool was developed by Michael Diamond (http://www.DigitalGemstones.com)
+and is released freely for personal and corporate use under the licence which can be found at:
+http://digitalgemstones.com/licence.php
+and can be summarized as:
+You are free to use this software for any purpose as long as Digital Gemstones is credited,
+and may redistribute the software in its original form or modified as you see fit, 
+as long as any credit comments in the code remain unchanged.
 
 VERSION: 1.5.0
 */
 
+// Documentation can be found in the README and in the UserManager class
 require_once('UserManager.class.php');
 
 class XMLUserManager extends UserManager
@@ -19,9 +23,6 @@ class XMLUserManager extends UserManager
   /*
   $file: path to xml file
   ensure xml file is not publicly accessible
-  
-  Suggest extending this function in order to
-  add additional permission levels and user fields.
   */
   function __construct($file)
   {
