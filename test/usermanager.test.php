@@ -134,13 +134,11 @@ if($_GET['test'] == 'getall'){
 
 // TEST MANAGEUSERS
 if($_GET['test'] == 'manageusers'){
-	$_SERVER['PHP_SELF'] .= '?test=manageusers'; // HORRIBLE little hack
 	$_user->manageUsers(true);
 }
 
 // TEST REQUIRELOGIN
 if($_GET['test'] == 'login'){
-	$_SERVER['PHP_SELF'] .= '?test=login'; // HORRIBLE little hack
 	$_user->require_login(UserManager::ADMIN);
 	echo 'Successful login.';
 }
@@ -148,7 +146,7 @@ if($_GET['test'] == 'login'){
 // TEST LOGOUT
 if($_GET['test'] == 'logout'){
 	$_user->logout();
-	header('location: '.$_SERVER['PHP_SELF']);
+	header('location: '.$_SERVER['SCRIPT_NAME']);
 }
 
 ?>

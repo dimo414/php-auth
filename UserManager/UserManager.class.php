@@ -5,9 +5,10 @@ This tool was developed by Michael Diamond (http://www.DigitalGemstones.com)
 and is released freely for personal and corporate use under the licence which can be found at:
 http://digitalgemstones.com/licence.php
 and can be summarized as:
-You are free to use this software for any purpose as long as Digital Gemstones is credited,
-and may redistribute the software in its original form or modified as you see fit, 
-as long as any credit comments in the code remain unchanged.
+You are free to use this software for any purpose and may redistribute the software 
+in its original form or modified as you see fit, as long as any credit comments
+in the code remain unchanged, and you do not release it under a different licence, or
+remove the copyright notice in the files.
 
 VERSION: 1.5.0
 */
@@ -212,7 +213,7 @@ abstract class UserManager
     
     echo '  <div class="usermanager_auth">'.
     (($error) ? '    <div class="usermanager_notice">'.sprintf($notice,$this->user['username']).'</div>' : '')
-    .'    <form action="'.$_SERVER['PHP_SELF'].'" method="post">
+    .'    <form action="" method="post">
       <table>
         <tr>
           <td>Username:</td>
@@ -277,7 +278,7 @@ abstract class UserManager
     
     $this->print_errors();
        
-    echo '<form action="'.$_SERVER['PHP_SELF'].'" method="post">
+    echo '<form action="" method="post">
       <table border="1" cellspacing="0" cellpadding="3">
         <tr>
           <th>Delete?</th>

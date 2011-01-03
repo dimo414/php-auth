@@ -34,7 +34,7 @@ echo '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/ht
 
     echo '  <div class="auth">'.
     (($error) ? '    <div class="smallNotice">Login Failed - Try Again</div>' : '')
-    .'    <form action="'.$_SERVER['PHP_SELF'].'" method="post">
+    .'    <form action="" method="post">
       <table>
         <tr>
           <td>Username:</td>
