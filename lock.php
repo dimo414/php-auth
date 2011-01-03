@@ -30,7 +30,7 @@ function auth($password)
 
   <body><div class="auth">'.
   (($error) ? '<div class="loginError">Login Failed - Try Again</div>' : '')
-  .'<form action="'.$_SERVER['PHP_SELF'].'" method="post">
+  .'<form action="" method="post">
   <table>
     <tr><td>Password:</td><td><input type="password" name="pass"></td></tr>
 
