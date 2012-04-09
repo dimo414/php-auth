@@ -274,7 +274,8 @@ END';
 	  if(!$all_good && $this->db->errno){
 	  	$this->manage_error($this->db->errno.': '.$this->db->error);
 	  }
-	  return $all_good;
+	  // where possible, return the insert id
+	  return $all_good ? ($this->db->insert_id ? $this->db->insert_id : true) : false;
   }
   
   public function getAllUsers(){
