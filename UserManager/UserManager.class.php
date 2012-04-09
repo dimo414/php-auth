@@ -350,7 +350,8 @@ abstract class UserManager
   if you want to add more than one user at once.  If $autocommit
   is false, you must call commitChanges() to update the underlying data.
   
-  returns false if username already exists or it appears the operation failed, else returns true.
+  returns false if username already exists or it appears the operation failed,
+  else a truthy value is returned - the id of the new user, if availible, or true if not.
   */
   abstract public function addUser($username, $password, $level = UserManager::USER, $array = array(), $autocommit = true);
   

@@ -105,7 +105,7 @@ class XMLUserManager extends UserManager
     
     if($autocommit)
       $this->commitChanges();
-    return true;
+    return $nextId;
   }
   
   public function changePassword($origPass, $newPass){
@@ -160,6 +160,7 @@ class XMLUserManager extends UserManager
     
     if($autocommit)
       $this->commitChanges();
+    return true;
   }
   
   public function deleteUser($id, $autocommit = true){
@@ -174,6 +175,7 @@ class XMLUserManager extends UserManager
     
     if($autocommit)
       $this->commitChanges();
+    return true;
   }
   
   public function getAllUsers(){

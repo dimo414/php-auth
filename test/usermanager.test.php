@@ -1,152 +1,216 @@
 <?php
 
-require_once('../../mysql.class.php');
 require_once('../UserManager/XMLUserManager.class.php');
 require_once('../UserManager/MySQLUserManager.class.php');
 
 session_start();
 
-if(isset($_GET['type']) && $_GET['type'] == 'xml')
+if(isset($_GET['type'])){
+	$_SESSION['um_type'] = $_GET['type'];
+}
+
+if(isset($_SESSION['um_type']) && $_SESSION['um_type'] == 'xml')
 	$_user = new XMLUserManager('BasicUserManager.xml');
-else{
-	$db = new my_mysqli('localhost','digigem','digigem','users');
+elseif(isset($_SESSION['um_type']) && $_SESSION['um_type'] == 'mysql'){
+	// may need to configure
+	$db = new mysqli('localhost','users','users','users');
 	$_user = new MySQLUserManager($db,'users');
-	// TEST CREATETABLESTRING
+	// TEST CREATETABLE
 	// $_user->createTable();
+} else {
+	$_user = new XMLUserManager('BasicUserManager.xml');
 }
 
 if(!isset($_GET['test']))
 {
+	$types = array('xml','mysql');
 	$tests = array('hash','validate','lookup','getuser','loaduser','adduser','changepass','modifyuser','deleteuser','getall','manageusers','login','logout');
-  $_user->header('Select A Test');
+	
+  $_user->header('Select A Test for '.get_class($_user));
+  echo '<h2>Select A Type</h2>
+  <ul>';
+  foreach($types as $type){
+  	echo '<li><a href="?type='.$type.'">'.strtoupper($type).'</a>'.
+  	     ($type == $types[0] ? ' (default)' : '')
+  	     .'</li>';
+  }
+  echo '</ul>';
+  
   echo '<h2>Select A Test</h2>
   <ul>';
   foreach($tests as $test)
     echo '<li><a href="?test='.$test.'">'.$test.'</a></li>';
   echo '</ul>';
   
+  echo '<p>Specify the user/password combiniation with user and pass URL params.</p>';
+  
+  echo $_user->user['level'] > 0 ? '<p>Currently logged in as: '.$_user->user['username'].'</p>' : '<p>Not logged in</p>';
   
   $_user->footer();
   exit;
 }
 
+$t_user = isset($_GET['user']) ? $_GET['user'] : 'test';
+$t_pass = isset($_GET['pass']) ? $_GET['pass'] : 'test';
+
+$_user->header('Testing '.get_class($_user));
+
+echo "<pre>\n";
+
 // TEST HASH
 if($_GET['test'] == 'hash'){
+	echo "TESTING HASH CODE\n";
 	$hash =  $_user->hash('hello');
 	$rehash = $_user->hash('hello',$hash);
 	
 	if($hash == $rehash){
-		echo 'HASH WORKS<br />';
+		echo 'HASH WORKS';
 	} else {
-		echo 'Hash didn\'t match:<br />
-	'.$hash.'<br />
-	'.$rehash.'<br />';
-		exit;
+		echo "Hash didn't match:\n".$hash."\n".$rehash;
 	}
 }
 
 // TEST VALIDUSER
-if($_GET['test'] == 'validate'){
-	if(!isset($_GET['user'])){
-		echo 'Specify a user GET parameter.';
-		exit;
-	}
-	echo $_user->validUsername($_GET['user']) ? 'VALID' : 'INVALID';
+elseif($_GET['test'] == 'validate'){
+	echo "TESTING VALID USERNAME\n";
+	echo $_user->validUsername($t_user) ? 'VALID' : 'INVALID';
 }
 
 // TEST LOOKUPATTRIBUTE
-if($_GET['test'] == 'lookup'){
-	$_user->addUser('test','test'); // ignore failure if user already exists
+elseif($_GET['test'] == 'lookup'){
+	echo "TESTING LOOKUP ATTRIBUTE\n";
 	$attr = 'username';
-	$valu = 'test';
+	$valu = $t_user;
+	echo "Retrieved users:\n";
 	$users = $_user->lookupAttribute($attr,$valu,false);
-	echo nl2br(print_r($users,true));
+	print_r($users);
 	
+	echo "Retrieved IDs:\n";
 	$users = $_user->lookupAttribute($attr,$valu,true);
-	echo nl2br(print_r($users,true));
+	print_r($users);
 }
 
 // TEST GETUSER
-if($_GET['test'] == 'getuser'){
-	$res = $_user->lookupAttribute('username','test',true);
-	$user = $_user->getUser($res[0]);
-	echo nl2br(print_r($user,true));
+elseif($_GET['test'] == 'getuser'){
+	echo "TESTING GET USER\n";
+	$res = $_user->lookupAttribute('username',$t_user,true);
+	if(empty($res)){
+		echo $t_user.' not found.';
+	} else {
+		$user = $_user->getUser($res[0]);
+		print_r($user);
+	}
 }
 
 // TEST LOADUSER
-if($_GET['test'] == 'loaduser'){
-	$_user->login('test','test');
-	echo nl2br(print_r($_user->user,true));
-	$_user->loadCurUser();
-	echo nl2br(print_r($_user->user,true));
-	$_user->logout();
-	echo nl2br(print_r($_user->user,true));
+elseif($_GET['test'] == 'loaduser'){
+	echo "TESTING LOAD USER\n";
+	echo "Logging in as $t_user:$t_pass\n";
+	$login = $_user->login($t_user,$t_pass);
+	if($login){
+		echo nl2br(print_r($_user->user,true));
+		echo "Loading full user\n";
+		$_user->loadCurUser();
+		echo nl2br(print_r($_user->user,true));
+		echo "Logged out\n";
+		$_user->logout();
+		echo nl2br(print_r($_user->user,true));
+	} else {
+		echo 'Login failed.';
+	}
 }
 
 // TEST ADDUSER
-if($_GET['test'] == 'adduser'){
-	$time = time();
-	$res = $_user->addUser('test_'.$time,$time,UserManager::USER);
-	echo $res ? 'Added new user' : 'Failed to add new user';
+elseif($_GET['test'] == 'adduser'){
+	echo "TESTING ADD USER\n";
+	$res = $_user->addUser($t_user,$t_pass,UserManager::USER);
+	echo $res ? 'Added new user '.$res : 'FAILED to add new user '.$t_user;
 }
 
 // TEST CHANGEPASSWORD
-if($_GET['test'] == 'changepass'){
-	$_user->login('test','test');
-	echo $_user->user['username'].'<br />';
-	echo ($_user->changePassword('test','green') ? 'Changed' : 'Failed').'<br />';;
-	$_user->logout();
-	echo $_user->user['username'].'<br />';
-	$_user->login('test','green');
-	echo $_user->user['username'].'<br />';
-	echo ($_user->changePassword('green','test') ? 'Changed' : 'Failed').'<br />';;
-	$_user->logout();
-	echo $_user->user['username'].'<br />';
+elseif($_GET['test'] == 'changepass'){
+	echo "TESTING CHANGE PASSWORD\n";
+	echo "Logging in as $t_user:$t_pass\n";
+	$login = $_user->login($t_user,$t_pass);
+	if($login){
+		echo "Cur user: ".$_user->user['username']."\n";
+		echo "Changing password: ".($_user->changePassword($t_pass,'green') ? 'Succeded' : 'FAILED')."\n";
+		echo "Logging in with new password\n";
+		$_user->logout();
+		echo "Cur user: ".$_user->user['username']."\n";
+		$_user->login($t_user,'green');
+		echo "Cur user: ".$_user->user['username']."\n";
+		echo "Changing back: ".($_user->changePassword('green',$t_pass) ? 'Succeded' : 'FAILED')."\n";
+		$_user->logout();
+	} else {
+		echo 'Login failed.';
+	}
 }
 
 // TEST MODIFYUSER
-if($_GET['test'] == 'modifyuser'){
-	$res = $_user->lookupAttribute('username','test');
-	$user = $res[0];
-	echo nl2br(print_r($user,true));
-	$_user->modifyUser(array('id' => $user['id'], 'username' => 'tested'));
-	$user = $_user->getUser($user['id']);
-	echo nl2br(print_r($user,true));
-	$_user->modifyUser(array('id' => $user['id'], 'username' => 'test', 'password' => 'test'));
-	$user = $_user->getUser($user['id']);
-	echo nl2br(print_r($user,true));
+elseif($_GET['test'] == 'modifyuser'){
+	echo "TESTING MODIFY USER\n";
+	$res = $_user->lookupAttribute('username',$t_user);
+	if(empty($res)){
+		echo $t_user.' does not exist';
+	} else {
+		$user = $res[0];
+		print_r($user);
+		echo "Modifying User\n";
+		$_user->modifyUser(array('id' => $user['id'], 'username' => 'tested'));
+		$user = $_user->getUser($user['id']);
+		print_r($user);
+		echo "Modifying User and Password\n";
+		$_user->modifyUser(array('id' => $user['id'], 'username' => $t_user, 'password' => $t_pass));
+		$user = $_user->getUser($user['id']);
+		print_r($user);
+	}
 }
 
 // TEST DELETEUSER
-if($_GET['test'] == 'deleteuser'){
-	$_user->addUser('name','pass');
-	$user = $_user->lookupAttribute('username','name',true);
-	echo 'trying to remove '.$user[0].'<br />';
+elseif($_GET['test'] == 'deleteuser'){
+	echo "TESTING DELETE USER\n";
+	$user = $_user->lookupAttribute('username',$t_user,true);
+	echo 'trying to remove '.$user[0]."\n";
 	$res = $_user->deleteUser($user[0]);
-	echo $res ? 'Removed user' : 'Failed to remove user';
+	echo $res ? 'Removed user' : 'FAILED TO REMOVE USER';
+	echo "\nLookup:\n";
+	print_r($_user->lookupAttribute('username',$t_user,true));
 }
 
 // TEST GETALLUSERS
-if($_GET['test'] == 'getall'){
+elseif($_GET['test'] == 'getall'){
+	echo "TESTING GET ALL USERS\n";
 	$users = $_user->getAllUsers();
-	echo nl2br(print_r($users,true));
+	print_r($users);
 }
 
 // TEST MANAGEUSERS
-if($_GET['test'] == 'manageusers'){
+elseif($_GET['test'] == 'manageusers'){
+	echo "TESTING MANAGE USERS<br/></pre>";
 	$_user->manageUsers(true);
+	echo '<pre>';
 }
 
 // TEST REQUIRELOGIN
-if($_GET['test'] == 'login'){
+elseif($_GET['test'] == 'login'){
+	echo "TESTING REQUIRE ADMIN LOGIN\n</pre>";
 	$_user->require_login(UserManager::ADMIN);
-	echo 'Successful login.';
+	echo '<pre>Successful login.';
 }
 
 // TEST LOGOUT
-if($_GET['test'] == 'logout'){
+elseif($_GET['test'] == 'logout'){
 	$_user->logout();
 	header('location: '.$_SERVER['SCRIPT_NAME']);
 }
+
+else {
+	echo 'INVALID TEST';
+}
+
+echo '</pre><a href="?">Back</a>';
+
+$_user->footer();
 
 ?>
