@@ -108,13 +108,13 @@ elseif($_GET['test'] == 'loaduser'){
 	echo "Logging in as $t_user:$t_pass\n";
 	$login = $_user->login($t_user,$t_pass);
 	if($login){
-		echo nl2br(print_r($_user->user,true));
+		print_r($_user->user);
 		echo "Loading full user\n";
 		$_user->loadCurUser();
-		echo nl2br(print_r($_user->user,true));
+		print_r($_user->user);
 		echo "Logged out\n";
 		$_user->logout();
-		echo nl2br(print_r($_user->user,true));
+		print_r($_user->user);
 	} else {
 		echo 'Login failed.';
 	}
@@ -201,8 +201,11 @@ elseif($_GET['test'] == 'login'){
 
 // TEST LOGOUT
 elseif($_GET['test'] == 'logout'){
+	print_r($_user->user);
+	echo "Logging out...\n";
 	$_user->logout();
-	header('location: '.$_SERVER['SCRIPT_NAME']);
+	print_r($_user->user);
+	echo 'Successful logout.';
 }
 
 else {
