@@ -22,6 +22,8 @@ and no configuration.
 MySQLUserManager is simiarly very quick to set up, but is slightly more complicated, and of course
 requires a database.  For websites expecting larger numbers of users however, it is likely to be more robust.
 */
+require_once('bitmasker.class.php');
+
 abstract class UserManager
 {
   /*
@@ -36,7 +38,10 @@ abstract class UserManager
   var $permissionFail = 'You are logged in as %s, but do not have adequate permissions to view this page.';
   var $levels = array('GUEST' => UserManager::GUEST, 'USER' => UserManager::USER, 'SUPERUSER' => UserManager::SUPERUSER, 'ADMIN' => UserManager::ADMIN);
   var $user = array(); // populated in constructor
+  var $groups = null;
+  
   private $manage_errors = array();
+  
   const GUEST = 0;
   const USER = 2;
   const SUPERUSER = 4;
@@ -51,12 +56,14 @@ abstract class UserManager
     {
       $_SESSION['usermanager__id'] = 0;
       $_SESSION['usermanager__level'] = self::GUEST;
+      $_SESSION['usermanager__groups'] = 0;
       $_SESSION['usermanager__username'] = '';
     }
       
 		$this->user = array(
 			'id' => $_SESSION['usermanager__id'],
 			'level' => $_SESSION['usermanager__level'],
+			'groups' => $_SESSION['usermanager__groups'],
 			'username' => $_SESSION['usermanager__username']
 		);
   }
@@ -162,11 +169,13 @@ abstract class UserManager
     {
       $_SESSION['usermanager__id'] = $user['id'];
       $_SESSION['usermanager__level'] = $user['level'];
+      $_SESSION['usermanager__groups'] = $user['groups'];
       $_SESSION['usermanager__username'] = $user['username'];
       
       $this->user = array(
 				'id' => $_SESSION['usermanager__id'],
 				'level' => $_SESSION['usermanager__level'],
+				'groups' => $_SESSION['usermanager__groups'],
 				'username' => $_SESSION['usermanager__username']
 			);
 		
@@ -176,33 +185,36 @@ abstract class UserManager
   }
   
   /*
-  $minPermission: minimum permission level to view page
   call function at beginning of page, if user is logged in
   (and has appropriate permissions) page will load as normal.
   If not, user is prompted to log in, and remainder of page does
   not load until logged in.
+  
+  $minPermission: minimum permission level to view page
+  $inGroup: user must be a member of one or more groups listed
+  $allGroups: user must be a member of all groups listed
   
   IMPORTANT: Note that this function uses $_SERVER['REQUEST_METHOD'] == "POST" to test if POST information was submitted.
   in order to prevent any code in your page from thinking /it's/ forms were submitted, $_SERVER['REQUEST_METHOD'] is set to 'GET'
   upon successful login.  If you use a different method to test if a form has been submitted, you should add an additional test to ensure
   it is in fact your form, and not the login form, which was submitted.
   */
-  function require_login($minPermission = UserManager::USER)
+  function require_login($minPermission = self::USER, $inGroup = null, $allGroups = null)
   {
-    if($this->user['level'] >= $minPermission)
+    if($this->hasPerm($minPermission,$inGroup,$allGroups))
       return;
       
     $error = false;
     if($_SERVER['REQUEST_METHOD'] == "POST")
     {
-      if($this->login($_POST['user'], $_POST['pass']) && $this->user['level'] >= $minPermission)
+      if($this->login($_POST['user'], $_POST['pass']) && $this->hasPerm($minPermission,$inGroup,$allGroups))
       {
         $_SERVER['REQUEST_METHOD'] = "GET"; // so as not to throw off any other scripts checking against post method
         return;
       }
       else $error = true;
     }
-    if($this->user['level'] > self::GUEST && $this->user['level'] < $minPermission)
+    if($this->user['level'] > self::GUEST && !$this->hasPerm($minPermission,$inGroup,$allGroups))
     {
       $error = true;
       $notice = $this->permissionFail;
@@ -242,24 +254,36 @@ abstract class UserManager
   function logout()
   {
     $_SESSION['usermanager__level'] = 0;
+    $_SESSION['usermanager__groups'] = 0;
     $_SESSION['usermanager__username'] = '';
     $_SESSION['usermanager__id'] = 0;
     
     $this->user = array(
 			'id' => $_SESSION['usermanager__id'],
 			'level' => $_SESSION['usermanager__level'],
+			'groups' => $_SESSION['usermanager__groups'],
 			'username' => $_SESSION['usermanager__username']
 		);
   }
   
   /*
   $minPermission: minimum permission level
+  $inGroup: user must be member of at least one group
+  $allGroups: user must be a member of all groups listed
   returns true if current user has or exceeds
   the minimum permission level passed.
   */
-  function hasPerm($minPermission = self::USER)
+  function hasPerm($minPermission = self::USER, $inGroup = null, $allGroups = null)
   {
-    return $this->user['level'] >= $minPermission;
+    $perm = $this->user['level'] >= $minPermission;
+    if($perm && $inGroup != null){
+      $perm = $this->groups->union($this->user['groups'],$this->groups->arrayToMask($inGroup)) > 0;
+    }
+    if($perm && $allGroups != null){
+      $allMask = $this->groups->arrayToMask($allGroups);
+      $perm = $this->groups->union($this->user['groups'],$allMask) == $allMask;
+    }
+    return $perm;
   }
   
   /*
@@ -284,7 +308,8 @@ abstract class UserManager
           <th>Delete?</th>
           <th>Username</th>
           <th>New Password</th>
-          <th>Level</th>';
+          <th>Level</th>
+          <th>Groups</th>';
    foreach($this->userFields as $field)
     {
       echo '<th>'.$field.'</th>';
@@ -303,6 +328,7 @@ abstract class UserManager
         echo '<option value="'.$value.'" '.(((int)$user['level'] == $value) ? 'selected="selected" ' : '').'>'.$name.'</option>';
     }
     echo '</select></td>';
+    echo '<td>TODO</td>';
     foreach($this->userFields as $field)
     {
       echo '<td><input type="text" name="user['.htmlentities($user['id']).']['.$field.']" value="'.htmlentities($user->$field).'" /></td>';
@@ -321,13 +347,14 @@ abstract class UserManager
         echo '<option value="'.$value.'">'.$name.'</option>';
     }
     echo '</select></td>';
+    echo '<td>TODO</td>';
     foreach($this->userFields as $field)
     {
       echo '<td><input type="text" name="newuser['.$i.']['.$field.']" /></td>';
     }
     echo "</tr>\n";
   }
-  echo '  <tr><td colspan="'.(4+count($this->userFields)).'">
+  echo '  <tr><td colspan="'.(5+count($this->userFields)).'">
       <input type="submit" value="Update" />
       <input type="reset" value="Reset" />
     </td></tr>
@@ -341,6 +368,7 @@ abstract class UserManager
   $username: username to add
   $password: password to add
   $level: permission level for user
+  $groups: groups mask, or array of groups - be sure to convert to mask if passed an array
   $array: array of other user values
   $autocommit: updates file when function executes
   Adds a new user, with the username and password set,
@@ -353,7 +381,7 @@ abstract class UserManager
   returns false if username already exists or it appears the operation failed,
   else a truthy value is returned - the id of the new user, if availible, or true if not.
   */
-  abstract public function addUser($username, $password, $level = UserManager::USER, $array = array(), $autocommit = true);
+  abstract public function addUser($username, $password, $level = UserManager::USER, $groups = 0, $array = array(), $autocommit = true);
   
   /*
   $origPass: original password of current user

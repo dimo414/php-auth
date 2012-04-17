@@ -33,12 +33,29 @@ class MySQLUserManager extends UserManager
   	$this->table = $table;
   }
   
+  private function mysqlIntSizes($size){
+    // http://dev.mysql.com/doc/refman/5.5/en/integer-types.html
+    if($size <= 8)
+      return 'TINYINT';
+    if($size <= 16)
+      return 'SMALLINT';
+    if($size <= 24)
+      return 'MEDIUMINT';
+    if($size <= 32)
+      return 'INT';
+    if($size <= 64)
+      return 'BIGINT';
+    return 'VARCHAR';
+  }
+  
   public function createTableString(){
   	$query = 'CREATE TABLE `'.$this->table.'` (
 `id` INT( 8 ) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY ,
 `username` VARCHAR( 255 ) NOT NULL ,
 `password` CHAR( 61 ) NOT NULL ,
-`level` TINYINT( 2 ) UNSIGNED NOT NULL ,
+`level` TINYINT( 1 ) UNSIGNED NOT NULL ,
+`groups` '.$this->mysqlIntSizes($this->groups->getSize()).
+'( '.((int)$this->groups->getSize()).' ) UNSIGNED NOT NULL ,
 ';
 foreach($this->userFields as $field)
     {
@@ -89,13 +106,16 @@ foreach($this->userFields as $field)
     return true;
   }
   
-  public function addUser($username, $password, $level = UserManager::USER, $array = array(), $autocommit = true){
+  public function addUser($username, $password, $level = UserManager::USER, $groups = 0, $array = array(), $autocommit = true){
     if(!$this->validUsername($username))
     	return false;
     $newuser = array();
     $newuser['username'] = $username;
     $newuser['password'] = $this->hash($password);
     $newuser['level'] = $level;
+    if(is_array($groups))
+      $groups = $this->groups->arrayToMask($groups);
+    $newuser['groups'] = $groups;
     foreach($this->userFields as $field)
     {
       $newuser[$field] = (isset($array[$field]) ? $array[$field] : '');
@@ -169,7 +189,7 @@ foreach($this->userFields as $field)
   		$result = $this->db->query(sprintf($unique_stub,implode("','",$users)));
   		
   		if($result->num_rows == 0){ // no conflicts
-		  	$add_query = 'INSERT INTO `'.$this->table.'` (`username`, `password`, `level`%s) VALUES %s;';
+		  	$add_query = 'INSERT INTO `'.$this->table.'` (`username`, `password`, `level`, `groups`%s) VALUES %s;';
 		  	
 		  	$extra = '';
 		  	foreach($this->userFields as $field)

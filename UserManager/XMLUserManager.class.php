@@ -53,7 +53,8 @@ class XMLUserManager extends UserManager
     $array = array('id' => $id,
     							 'username' => (string)$user->username,
                 	 'password' => (string)$user->password,
-                	 'level'    => (string)$user->level);
+                	 'level'    => (string)$user->level,
+                	 'groups'   => (string)$user->groups);
     foreach($this->userFields as $field)
     {
       $array[$field] = isset($user->$field) ? (string)$user->$field : '';
@@ -73,7 +74,8 @@ class XMLUserManager extends UserManager
         	$array[] = array('id' => (string)$user['id'],
     							 'username' => (string)$user->username,
                 	 'password' => (string)$user->password,
-                	 'level'    => (string)$user->level);
+                	 'level'    => (string)$user->level,
+                	 'groups'   => (string)$user->groups);
 			    foreach($this->userFields as $field)
 			    {
 			      $array[$field] = isset($user->$field) ? (string)$user->$field : '';
@@ -84,7 +86,7 @@ class XMLUserManager extends UserManager
     return $array;
   }
   
-  public function addUser($username, $password, $level = UserManager::USER, $array = array(), $autocommit = true){
+  public function addUser($username, $password, $level = UserManager::USER, $groups = 0, $array = array(), $autocommit = true){
   	$usernameMatches = $this->lookupAttribute('username', $username,true);
     if(count($usernameMatches) > 0)
     	return false;
@@ -98,6 +100,9 @@ class XMLUserManager extends UserManager
     $newuser->addChild('username',$username);
     $newuser->addChild('password',$this->hash($password));
     $newuser->addChild('level',$level);
+    if(is_array($groups))
+      $groups = $this->groups->arrayToMask($groups);
+    $newuser->addChild('groups',$groups);
     foreach($this->userFields as $field)
     {
       $newuser->addChild($field, isset($array[$field]) ? $array[$field] : '');
@@ -184,7 +189,8 @@ class XMLUserManager extends UserManager
 	    $array = array('id' => (string)$user['id'],
 	    							 'username' => (string)$user->username,
 	                	 'password' => (string)$user->password,
-	                	 'level'    => (string)$user->level);
+	                	 'level'    => (string)$user->level,
+	                	 'groups'   => (string)$user->groups);
 	    foreach($this->userFields as $field)
 	    {
 	      $array[$field] = isset($user->$field) ? (string)$user->$field : '';

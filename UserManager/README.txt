@@ -40,7 +40,7 @@ ABOUT
 	Version 1.5.0 - check http://www.digitalgemstones.com/code/tools/auth/UserManager/ for up to date versions.
 	The UserManager class is a totally self contained user management system.  Include the class in your website, and you have with a few short lines of code a fully operational login system, including multiple user levels (default User, SuperUser, and Admin) and the ability to lock web pages from users without appropriate permissions - similar to .htaccess and .htpassword locking, except integrated with your website rather than a series of intrusive 401 login prompts.
 	
-	There are two versions, XMLUserManager and MySQLUserManager, both of which extend UserManager.  XMLUserManager is the primary tool, providing user managment without a database or any complicated configuration.  MySQLUserManager is a new tool which lets you maintain larger user bases, and is ideal if you are already using a database, but don't have user managment.  Both classes follow the same interface, and therefore switching from one to the other is as easy as changing which class you initialize.
+	There are two versions, XMLUserManager and MySQLUserManager, both of which extend UserManager.  XMLUserManager is the primary tool, providing user management without a database or any complicated configuration.  MySQLUserManager is a new tool which lets you maintain larger user bases, and is ideal if you are already using a database, but don't have user management.  Both classes follow the same interface, and therefore switching from one to the other is as easy as changing which class you initialize.
 
 --------------------------------------------------------------------------------
 
@@ -94,7 +94,7 @@ DATABASE SETUP
 	
 	If the user on the connection passed to MySQLUserManager has CREATE permission, you can call 'createTable()', this will execute the create command and construct the necessary table.  Alternatively, you can call 'echo createTableString()' to get the command to execute it manually.
 	
-	MySQLUserManager cannot predict what data you may want to search by.  Looking up by username and id are fast with the default command, but if you extend the class (more below) be aware that lookupAttribute() is only efficent when run against properly indexed data.  Therefore you should modify the table or the CREATE instruction as necessary - a decent rule of thumb would be to index any colum you intend to search by, but MySQLUserManager does not eliminate the need for good database design.
+	MySQLUserManager cannot predict what data you may want to search by.  Looking up by username and id are fast with the default command, but if you extend the class (more below) be aware that lookupAttribute() is only efficient when run against properly indexed data.  Therefore you should modify the table or the CREATE instruction as necessary - a decent rule of thumb would be to index any column you intend to search by, but MySQLUserManager does not eliminate the need for good database design.
   
 CREATING USERS
   There are two different ways to create and manage your website's users.  The first is through the built in manageUsers() function and the second is manually, with addUser(), modifyUser(), and deleteUser().
@@ -107,7 +107,7 @@ CREATING USERS
   ?>
   ----------
   
-  This will output a form to modify existing users, and add additional users.  If you don't have any users created already, you will just see three empty slots to create your users.  The 'true' parameter passed to manageUsers() overrides the protection built into the function - normally if you are not logged in as an Administrator, you will not be able to access the user managment page.  Since you haven't created any administrator accounts, you need to override this lock.
+  This will output a form to modify existing users, and add additional users.  If you don't have any users created already, you will just see three empty slots to create your users.  The 'true' parameter passed to manageUsers() overrides the protection built into the function - normally if you are not logged in as an Administrator, you will not be able to access the user management page.  Since you haven't created any administrator accounts, you need to override this lock.
   
   IMPORTANT: make sure to remove the parameter to manageUsers() before a live launch of your site.  If override is not set, manageUsers is safe from unauthorized access.
   
@@ -133,13 +133,13 @@ LOGIN AND CHECKING PERMISSION
   ----------
   
 CURRENT USER INFORMATION
-  The current user's ID, username, and level are stored in the session and are immediatly availible to every webpage.  This information is stored in the $user array.  If you need additional information about the current user, you must call loadCurUser().  This will populate the array with all other information on the current user.
+  The current user's ID, username, and level are stored in the session and are immediately available to every webpage.  This information is stored in the $user array.  If you need additional information about the current user, you must call loadCurUser().  This will populate the array with all other information on the current user.
   
 ADDITIONAL METHODS WORTH NOTING
   logout
     Call logout() and the current user will be logged out and reduced to GUEST permission level.
   loadCurUser
-    To save calls, the current user's extended data is not loaded unless requested.  The ID, Username, and Level are availible in the $user->user array immediatly.  If you need the extended data, like the password hash or any custom attributes being stored, call loadCurUser() to populate the $user->user array with all the current user's information.
+    To save calls, the current user's extended data is not loaded unless requested.  The ID, Username, and Level are available in the $user->user array immediately.  If you need the extended data, like the password hash or any custom attributes being stored, call loadCurUser() to populate the $user->user array with all the current user's information.
   getUser
     To get information on a user given an ID, you can call $user->getUser($id).  This will return an associative array of all the details of that user.
   lookupAttribute
@@ -163,6 +163,26 @@ NEW PERMISSION LEVELS AND ADDITIONAL FIELDS
   
   ----------
   $this->levels['SUBSCRIBER'] = self::SUBSCRIBER;
+  ----------
+  
+  In addition to permission levels, you can also define permission groups, which do not have a logical hierarchy, but also are not mutually exclusive.  A user can only be one level, and automatically inherits the privileges of any lower level, but can be a member of any number of groups.  This is done by constructing a bitmasker object (see bitmasker.class.php for more) with the names of the groups you would like to exist, like so:
+  
+  ----------
+  $this->groups = new bitmasker('author','editor','publisher');
+  ----------
+  
+  Now you can specify a user's groups directly in addUser, update them with modifyUser (though you have to directly use the bitmasker object in this case), and most importantly handle permission checks with hasPerm and require_login.  For instance, to confirm a user is either an author or a publisher, you can do the following:
+  
+  ----------
+  $_user->hasPerm(UserManager::USER,array('author','publisher'));
+  ----------
+  
+  Groups are stored as a bitmask, and as such you'll want to use the bitmask class to modify them or do more advanced handling of user groups:
+  
+  ----------
+  $_user->groups->getValue($_user->user['groups'],'author'); // returns true if user is an author
+  $newGroup = $_user->groups->setValue($_user->user['groups'], 'editor', true); // sets editor field to true and returns modified mask.  Saving the modified mask is a second step.
+  $groups = $_user->groups->maskToArray($_user->user['groups']); // returns an array of the groups a user is in
   ----------
   
   Another way to extend UserManager is to introduce new attributes for the XML document / DB to store.  Do this by appending an array of the attributes you want to add to the userFields array, for instance:
@@ -189,9 +209,13 @@ EXTENDING HEADER AND FOOTER
 
 INCLUDED FILES
   UserManager.class.php
-  This is the main class, include it in your code and create an instance of it in order to work with the UserManager.
-  users.xml
-  This empty, template XML file is all set for immediate launch, simply save it somewhere secure and point the UserManager class at it.
+  The abstract parent class of both UserManager objects, handles all backend-abstract behavior.
+  XMLUserManager.class.php
+  The XML-backed UserManager, include this file in your code and create an instance of it to use XML.
+  MySQLUserManager.class.php
+  The MySQL-backed UserManager, include this file in your code and create an instance of it to use XML.
+  bitmasker.class.php
+  A bitmap handling utility for storing and working with groups.
   UserManager.Extended.class.php
   This is a class sampling one possible way to extend the UserManager to draw more out of the application.
   readme.txt
