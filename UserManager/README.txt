@@ -15,7 +15,7 @@ CONTENTS
 4. Future Features
 5. Default Usage
    1. Initialization
-   		1. Database Setup
+      1. Database Setup
    2. Creating Users
    3. Login and Checking Permission
    4. Current User Information
@@ -29,10 +29,8 @@ CONTENTS
       7. deleteUser
       8. commitChanges
 6. Advanced Usage
-   1. Attributes and Constructor
+   1. New Permission Levels and Additional Fields
    2. Extending Header and Footer
-   3. Additional Tricks
-   4. A Note on Philosophy
 7. Included Files
 8. Version History
 
@@ -158,12 +156,11 @@ ADDITIONAL METHODS WORTH NOTING
 --------------------------------------------------------------------------------
 
 ADVANCED USAGE
-  This section documents how to properly extend the UserManager class to make it even more powerful and customizable, and a few other more advanced tricks.  It assumes you've read the Default Usage, and so does not document how to use the class itself.
+  You can extend either UserManager class to enable more custom behavior, including new user levels, custom header and footer behavior, and more.  It is also possible to extend UserManager itself to implement a new backend.  How to do this is not presently documented, but replicating the contents of either XMLUserManager or MySQLUserManager with your backend of choice (JSONUserManager, for instance) will get you most of the way there.
 
-ATTRIBUTES AND CONSTRUCTOR
-  If you wish to create additional user levels, you must introduce a new constant, such as 'const SUBSCRIBER = 3;' make the name descriptive, and make the value some integer to represent its rank.  Larger numbers have higher permissions.  Note that 0 is a guest, a normal user is 2, a super user is 4, and an administrator is 10.
+NEW PERMISSION LEVELS AND ADDITIONAL FIELDS
+  If you wish to create additional user levels, you must introduce a new constant, such as 'const SUBSCRIBER = 3;' make the name descriptive, and make the value some integer to represent its rank.  Larger numbers have higher permissions.  Note that 0 is a guest, a normal user is 2, a super user is 4, and an administrator is 10.  In addition to creating a new constant, you will want to add this value to the levels array in your constructor:
   
-  There are two changes you can make to the constructor, the first is in tandem with any new user levels you introduce.  In addition to the constant, you must also add the constant to the $levels array, with the title as the key, and the int value as the value.
   ----------
   $this->levels['SUBSCRIBER'] = self::SUBSCRIBER;
   ----------
@@ -176,7 +173,7 @@ ATTRIBUTES AND CONSTRUCTOR
   MAKE SURE you call the parent constructor and pass it the file you want to reference, even if you don't want to extend either the user levels or the user attributes.
   
 EXTENDING HEADER AND FOOTER
-  Extending the header and footer will allow you to display your own template when using the require_login() and manageUsers() functions.  Quite simply, insert your own template header code, and that's that.  For instance, to work with the template system I normally use, you'd do the following:
+  Extending the header and footer will allow you to display your own template when using the require_login() and manageUsers() functions.  Simply insert your own template header and footer code into the respective methods.  For instance, to work with the template system I normally use, I do the following:
   ----------
   function header($title)
   {
@@ -190,16 +187,6 @@ EXTENDING HEADER AND FOOTER
   }
   ----------
 
-ADDITIONAL TRICKS
-  Since you are able to pass the XML file or Database/table info at the time of initialization, you can use more than one XML file / table in your website, perhaps if you want a completely different set of users for one section than for another.  That said, generally it's probably better to let users login once and stay logged in, which is of course the default operation of the UserManager class.
-  
-  In addition, and perhaps more useful, you can extend the class more than once, and still work with the same XML file (though if your user attributes do not match up with the attributes listed in the file, you could very well run into some very nasty, almost untraceable bugs).  Using multiple different extentions would allow you, for instance, to output different header and footer code depending on the page (say admin pages have a more detailed header).  Additional extentions of the UserManager class are not the only way to handle these scenarios, but I want to make sure users know the option exists.
-  
-A NOTE ON PHILOSOPHY
-  I'm sure there are users who will, rather than extending the class, just go in and play with my code.  In some sense, that's easier, however easier doesn't always mean better, and this is one of those cases.  There are several reasons why I discourage this.  First off, at a purist level, it makes a lot of sense to keep different code separate and compartmentalized.  If your code and my code start merging, finding errors becomes that much harder.  Furthermore, part of the underlying logic of OOP is to keep modifications and the original as completely separate entities, allowing the developer to set the ground rules for how his code should be used.  Since PHP is not compiled beforehand, there's nothing stopping you from breaking these principles of OOP, but if you should chose to do that, I'd like you to ask yourself why you're thinking of violating this concept.  The only reason one would theoretically need to go into the original class is if there is something actually wrong with the code, in which case I would greatly prefer it if you contacted me, and we worked to improve the code together, rather than simply futzing with it yourself.  
-  
-  In addition, and this is a far more practical argument, if you leave the original UserManager class untouched, when I roll out updates, all you'll have to do is replace the file.  It's unlikely any of my updates will break how functions are supposed to be extended, and even if that is the case, I'll make sure to mention those changes and how to handle them.  This means implementing these kind of updates will most likely be nearly painless.  Additionally, if you keep all customizations in your own class, you can switch between XMLUserManager and MySQLUserManager simply by changing which class it extends.
-  
 INCLUDED FILES
   UserManager.class.php
   This is the main class, include it in your code and create an instance of it in order to work with the UserManager.
