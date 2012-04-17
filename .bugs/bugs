@@ -1,3 +1,5 @@
 all autocommit MySQL methods commit even if autocommit is false except addUser | owner:Michael, open:False, id:2b14e5138954802c7e02b601b0247d9ababc3fc2, time:1278404597.35
-paginate manage users page                                                     | owner:Michael, open:True, id:e5737810b7927aef60df33882bf0d63e0059b4e7, time:1279361121.18
-ManageUsers stops after deleting a user                                        | owner:Michael, open:False, id:fc9d21274f71ae785dff488a31a7a790b36668fc, time:1278297507.04
+UserManager.Extended.class.php doesn't exist, recreate and add to test | owner:Michael, open:True, id:3a520cdf5101361f245bcee67b2462e99b6b0f21, time:1334669961.6
+paginate manage users page                                   | owner:Michael, open:True, id:e5737810b7927aef60df33882bf0d63e0059b4e7, time:1279361121.18
+manageUsers() needs to handle groups                         | owner:Michael, open:True, id:ecf3f3e42d2279742db78965e53a7eee9e8f3184, time:1334652743.32
+ManageUsers stops after deleting a user                      | owner:Michael, open:False, id:fc9d21274f71ae785dff488a31a7a790b36668fc, time:1278297507.04

@@ -1,5 +1,7 @@
 <?php
 
+error_reporting(E_ALL | E_STRICT);
+
 require_once('../UserManager/XMLUserManager.class.php');
 require_once('../UserManager/MySQLUserManager.class.php');
 
@@ -20,11 +22,12 @@ elseif(isset($_SESSION['um_type']) && $_SESSION['um_type'] == 'mysql'){
 } else {
 	$_user = new XMLUserManager('BasicUserManager.xml');
 }
+$_user->groups = new bitmasker(array('private','public','all'));
 
 if(!isset($_GET['test']))
 {
 	$types = array('xml','mysql');
-	$tests = array('hash','validate','lookup','getuser','loaduser','adduser','changepass','modifyuser','deleteuser','getall','manageusers','login','logout');
+	$tests = array('hash','validate','bitmask','lookup','getuser','loaduser','adduser','changepass','modifyuser','deleteuser','getall','manageusers','login','logingroup','logout');
 	
   $_user->header('Select A Test for '.get_class($_user));
   echo '<h2>Select A Type</h2>
@@ -76,6 +79,37 @@ elseif($_GET['test'] == 'validate'){
 	echo $_user->validUsername($t_user) ? 'VALID' : 'INVALID';
 }
 
+//TEST BITMASK
+elseif($_GET['test'] == 'bitmask'){
+	echo "TESTING BITMASK UTILITY\n";
+	$filePerm = new bitmasker(array('exec','write','read'));
+	
+	echo 'All Perms: '.$filePerm->all.':'.$filePerm->allInt.' - '.implode(', ',$filePerm->maskToArray($filePerm->all))."\n";
+	
+	$mask = $filePerm->arrayToMask(array('read'));
+	$intMask = $filePerm->arrayToIntMask(array('read'));
+	
+	$arr = $filePerm->maskToArray($mask);
+	$intArr = $filePerm->maskToArray($intMask);
+	
+	if($arr != $intArr){
+	  echo 'MASK AND INT MASK RETURN DIFFERENT ARRAYS';
+	}
+	
+	echo 'Read only: '.$mask.':'.$intMask.' - '.implode(', ',$filePerm->maskToArray($intMask))."\n";
+	
+	echo 'Can Read? '.($filePerm->getValue($mask,'read') ? 'yes' : 'NO')."\n";
+	echo 'Can Execute? '.($filePerm->getValue($mask,'exec') ? 'YES' : 'no')."\n";
+	
+	echo "Set Execute On\n";
+	$newMask = $filePerm->setValue($mask,'exec',true);
+	echo $newMask.':'.$filePerm->maskToIntMask($newMask)."\n";
+	echo 'Can Execute? '.($filePerm->getValue($newMask,'exec') ? 'yes' : 'NO')."\n";
+	
+	$rw = $filePerm->arrayToMask(array('read','write'));
+	echo $filePerm->union(7,$rw) == $rw ? 'Has RW access' : 'DOES NOT HAVE R/W ACCESS';
+}
+
 // TEST LOOKUPATTRIBUTE
 elseif($_GET['test'] == 'lookup'){
 	echo "TESTING LOOKUP ATTRIBUTE\n";
@@ -123,7 +157,7 @@ elseif($_GET['test'] == 'loaduser'){
 // TEST ADDUSER
 elseif($_GET['test'] == 'adduser'){
 	echo "TESTING ADD USER\n";
-	$res = $_user->addUser($t_user,$t_pass,UserManager::USER);
+	$res = $_user->addUser($t_user,$t_pass,UserManager::USER,array('private'));
 	echo $res ? 'Added new user '.$res : 'FAILED to add new user '.$t_user;
 }
 
@@ -196,6 +230,13 @@ elseif($_GET['test'] == 'manageusers'){
 elseif($_GET['test'] == 'login'){
 	echo "TESTING REQUIRE ADMIN LOGIN\n</pre>";
 	$_user->require_login(UserManager::ADMIN);
+	echo '<pre>Successful login.';
+}
+
+// TEST REQUIREGROUP
+elseif($_GET['test'] == 'logingroup'){
+	echo "TESTING REQUIRE PUBLIC GROUP LOGIN\n</pre>";
+	$_user->require_login(UserManager::GUEST, array('public'));
 	echo '<pre>Successful login.';
 }
 
