@@ -2,8 +2,8 @@
 
 error_reporting(E_ALL | E_STRICT);
 
-require_once('../UserManager/XMLUserManager.class.php');
-require_once('../UserManager/MySQLUserManager.class.php');
+require_once('../XMLUserManager.class.php');
+require_once('../MySQLUserManager.class.php');
 
 session_start();
 
