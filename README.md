@@ -38,8 +38,6 @@ Primarily tested with [Uniform Server](http://www.uniformserver.com/).
 ### Potential Features
 
 * `ManageUsers` should be divided into separate pages in order to deal with larger user bases.
-	
-Feature requests: https://bitbucket.org/dimo414/php-auth/issues
   
 ## Usage
 
